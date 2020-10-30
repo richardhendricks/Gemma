@@ -36,14 +36,16 @@ pulseColors = {
   6:[0xff,0x00,0xff], # MAGENTA
   7:[0xff,0x00,0x00]  # RED
   }
-cycle = 0 # Current location in the cycle
+cycle = 1 # Current location in the multicolor cycle
 pulse = 0 # Current pulse choice.
+RAMPTIME = 7.5 # Ramp up and down time, in seconds
+STEP = 64 # Number of steps to ramp up/down
 delay = 15
 
 # Built-in dotStar
-bright = 0
+bright = 3
 
-brightNess = {
+brightNess = { # Brightness on LEDs isn't linear, nor is the human eye.
   0:0.017,
   1:0.078,
   2:0.36,
@@ -86,9 +88,35 @@ def pulseLED(color):
       print("Pulsing Multicolor: BLACK")
   else:
     print("Pulsing: " + pulseTypes[pulse])
-  dot[0]=int(pulseColors[color][0]*brightNess[bright]), int(pulseColors[color][1]*brightNess[bright]),int(pulseColors[color][2]*brightNess[bright])
-  dot.show()
-  return
+  # ramp upwards
+  r=0
+  g=0
+  b=0
+  rInc = pulseColors[color][0]*brightNess[bright]/STEP
+  gInc = pulseColors[color][1]*brightNess[bright]/STEP
+  bInc = pulseColors[color][2]*brightNess[bright]/STEP
+  count = 0
+  print("Ramp UP")
+  while (count < STEP):
+    dot[0]=int(r), int(g), int(b)
+    dot.show()
+    r = r + rInc
+    g = g + gInc
+    b = b + bInc
+    count = count + 1
+    time.sleep(RAMPTIME/STEP)
+  print("Pause at max")
+  time.sleep(RAMPTIME/3.75) # Nominally 2s
+  print("Ramp DOWN")
+  while (count > -1):
+    dot[0]=int(r), int(g), int(b)
+    dot.show()
+    r = r - rInc
+    g = g - gInc
+    b = b - bInc
+    count = count - 1
+    time.sleep(RAMPTIME/STEP)
+    
     
 while True:
   # Check temperature and update pulse rate
@@ -96,10 +124,10 @@ while True:
   print("Delay: %0f" % delay)
   # Execute pulse program
   pulseLED(pulse)
-  # Rest
+  print("Rest")
   delayCount = delay - 1
-  # This way there is a 1.5s delay before checking keys again
-  time.sleep(1)
+  # This way there is a 1s delay before checking keys again
+  time.sleep(.5)
   while(delayCount > 0):
     time.sleep(.5)
     if changePulse.value:
